@@ -148,13 +148,14 @@ bfsEdgesSeen adj root = bfsEdgeEvents adj [root] >>= eventEdgesSeen
 bfsNodeEvents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [TraversalEvent v]
 bfsNodeEvents adj roots = start where
 	start = rec (HashSet.fromList roots) (HashSet.fromList roots)
-	rec cur seen
-		| HashSet.null cur = []
-		| otherwise        = events ++ rec cur' seen' where
-			new = cur `HashSet.difference` seen
-			seen' = seen `hashUnion` new
-			cur' = HashSet.fromList $ concatMap adj $ HashSet.toList new
-			events = Group new:(map Enter $ HashSet.toList new)
+	rec group seen
+		| HashSet.null group = []
+		| otherwise          = events group ++ rec nextGroup seen' where
+			seen' = seen `hashUnion` nextGroup
+			nextGroup =
+				(`HashSet.difference` seen) $
+				(HashSet.fromList . concatMap adj . HashSet.toList) group
+	events group = Group group:(map Enter $ HashSet.toList group)
 
 -- FIXME: The current API technically accepts multigraphs, but the way this is
 --        written assumes edges from a node are unique.
