@@ -6,7 +6,10 @@ module ExampleGraphs(
 	sourceLadder,
 	manyCompletes,
 	fibonacciGraph,
-	nimGraph) where
+	nimGraph,
+	withDoubleEdges,
+	withSelfLoops,
+	) where
 
 import qualified Data.List as List
 import Numeric.Natural -- base 4.8
@@ -67,3 +70,17 @@ nimGraph piles = foo $ canonicalize piles where
 	these k ks = map (:ks) (0 .< k)  -- take from this pile
 	those k ks = map (k:) (foo ks)    -- take from a future pile
 	canonicalize = List.sort . filter (>0)
+
+-- Examples of particularly EVIL graph features which are technically
+--  permitted due to the simplistic (v -> [v]) input form.
+-- Some graph properties do not have sensible definitions in these cases,
+-- and even when they do, correct handling of them can be painful.
+
+-- add self loops to every node in another graph
+withSelfLoops :: (a -> [a]) -> (a -> [a])
+withSelfLoops adj v = v:adj v
+
+-- make double edges out of every edge in a graph
+withDoubleEdges :: (a -> [a]) -> (a -> [a])
+withDoubleEdges adj v = adj v ++ adj v
+

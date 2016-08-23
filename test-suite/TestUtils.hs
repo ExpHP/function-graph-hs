@@ -7,6 +7,13 @@ module TestUtils(
 
 	{- RE-EXPORTS: tasty-hunit -}
 	Assertion,
+	testCase,
+	testCaseSteps,
+	assert,
+	assertFailure,
+	assertBool,
+	assertString,
+	assertEqual,
 	(@=?),
 	(@?=),
 	) where
