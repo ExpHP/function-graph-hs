@@ -122,6 +122,13 @@ dfsEvents adj root = peek root [] HashSet.empty True where
 bfsOrder :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [v]
 bfsOrder adj root = bfsNodeEvents adj [root] >>= eventPreOrders
 
+-- FIXME:
+--   Multiple times while writing tests for this I got memory errors
+--     thanks to forgetting about the non-terminating output.
+--   Perhaps the mathematical beauty is not worth this potential footgun?
+--   Or maybe these issues won't be common in typical usage...
+--     (typical test code differs vastly from typical "real" code)
+
 -- | Yields groups of increasing distance from a set of nodes.
 -- | The first set yielded are the input nodes, the second set are
 -- | the nodes whose minimum distance from an input node is exactly 1,

@@ -9,6 +9,7 @@ module ExampleGraphs(
 	nimGraph,
 	withDoubleEdges,
 	withSelfLoops,
+	Sided, _L, _R,
 	) where
 
 import qualified Data.List as List
@@ -16,6 +17,12 @@ import Numeric.Natural -- base 4.8
 
 (.<) :: (Enum a)=> a -> a -> [a]
 a .< b = [a..pred b]
+
+type Sided a = (a, Bool)
+_L :: a -> Sided a
+_L x = (x, False)
+_R :: a -> Sided a
+_R x = (x, True)
 
 floorMultiple :: (Integral a)=> a -> a -> a
 floorMultiple n = (* n).(`div` n)
@@ -51,7 +58,7 @@ sourceLadder (k,side) = [(k,not side), (k+1,side)]
 
 -- Composed of an infinite number of disconnected complete graphs
 manyCompletes :: Natural -> (Natural -> [Natural])
-manyCompletes n k = (floorMultiple n k .< floorMultiple n (k+n))
+manyCompletes n k = List.delete k (floorMultiple n k .< floorMultiple n (k+n))
 
 -- Dependency graph of the fibonacci function
 fibonacciGraph :: Natural -> [Natural]

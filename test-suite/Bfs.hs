@@ -77,9 +77,9 @@ testForwardEdge = "forward edge (sinkLadder)" ~::~
 
 	, "bfsEdgesSeen" ~: do
 		let actual = bfsEdgesSeen g root
-		(take 2.drop 0) actual `assertEqMultiset` [((1,False),(0,False)),((1,False),(1,True))]
-		(take 3.drop 2) actual `assertEqMultiset` [((1,True),(0,True)),((1,True),(1,False)),((0,False),(0,True))]
-		(       drop 5) actual `assertEqMultiset` [((0,True),(0,False))]
+		(take 2.drop 0) actual `assertEqMultiset` [(_L 1,_L 0), (_L 1,_R 1)]
+		(take 3.drop 2) actual `assertEqMultiset` [(_L 0,_R 0), (_R 1,_L 1), (_R 1,_R 0)]
+		(       drop 5) actual `assertEqMultiset` [(_R 0,_L 0)]
 
 	, "groupsByDistance" ~:
 		takeWhile (not.null) (groupsByDistance g [root])
@@ -87,7 +87,7 @@ testForwardEdge = "forward edge (sinkLadder)" ~::~
 	]
 	where
 		g = sinkLadder
-		nodeGroups = [[(1,False)], [(0,False),(1,True)], [(0,True)]]
+		nodeGroups = [[_L 1], [_L 0, _R 1], [_R 0]]
 		edgeGroups = [map ((,) root) mids, map (flip (,) final) mids]
 		[[root], mids, [final]] = nodeGroups
 
@@ -106,7 +106,8 @@ testCrossEdge = "cross edge" ~::~
 		drop 2 actual `assertEqMultiset` backEdges ++ crossEdges
 
 	, "groupsByDistance" ~:
-		groupsByDistance g [root] @?= map HashSet.fromList nodeGroups
+		takeWhile (not.null) (groupsByDistance g [root])
+		@?= map HashSet.fromList nodeGroups
 	]
 	where
 		g = manyCompletes 3
