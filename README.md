@@ -18,6 +18,14 @@ and to be quite frank I'm tired of writing them and searching for them!
 This is experimental, and the current pickings are extremely slim.
 The API will likely get an overhaul a fair several dozen times as I
 add more to it and continue to use it in other work.
+(That or it will die a slow, horrible death from criminal negligence)
+
+### Installation
+
+    git clone yadda yadda
+    cabal sandbox add-source yadda yadda
+
+Nothing on hackage yet; both because the thought of maintaining a project seems to spark in me some incomprehensible, *primal* sort of fear, and also because I'm not entirely wed to the name yet. `:V`
 
 ### Examples
 You can find a terribly contrived example of possible usage
@@ -25,4 +33,4 @@ You can find a terribly contrived example of possible usage
 wherein I present the world's worst "edit distance" algorithm
 based on the world's most naive "shortest path length" algorithm.
 
-Real examples will have to wait until I adapt real code. `:V`
+Real examples will have to wait until I adapt real code.
