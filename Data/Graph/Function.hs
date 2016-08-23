@@ -1,11 +1,61 @@
--- | Graph algorithms without a graph data structure.
+{-|
+Module      : Data.Graph.Function
+Description : Graph algorithms without a graph data structure.
+Copyright   : (c) Michael Lamparski, 2016
+License     : MIT
+Maintainer  : diagonaldevice@gmail.com
+Stability   : experimental
+Portability : lolidunno
+
+There are wide variety of problems which can be easily reduced to
+some sort of algorithm on a graph---and oftentimes, the easiest part
+of this graph to obtain is its adjacency function.
+
+But if you want to use a big graph library like fgl, you need to know
+quite a bit more about your graph; such as a complete set of nodes.
+This of course also means that you cannot have an infinitely large graph;
+you must take a finite section of it, which may require plenty of
+reasoning first to decide where the line can be drawn.
+This library provides lazy graph algoriths so that you don't have
+to do that.
+
+Note that with great abstraction comes poor efficiency;
+those counting their clock cycles may want to look elsewhere.
+
+The current selection is limited to just BFS and DFS traversals
+on unweighted, directed graphs with unlabeled edges.
+However, the intent is to expand it with more useful algorithms.
+
+-}
+-- FIXME these rules are kind of nonsensical and immediately stop making sense
+--       if you consider e.g. undirected graphs;  dge-centric algorithms
+--       on undirected graphs will want to treat (s,t) and (t,s) as the same
+--       edge, but if multiple edges are distinct and unlabeled, how do we
+--       identify the right '(s,t)'s to the right '(t,s)'s?
+
 module Data.Graph.Function(
-	{- DEPTH-FIRST TRAVERSAL -}
+    -- * Assumptions:
+
+	-- | Unless otherwise stated:
+	--
+	--      * graphs are directed
+	--      * edges are unlabeled and unweighted
+	--      * the edges @(u,v)@ and @(v,u)@ are considered distinct.
+	--      * multiple edges are distinct
+	--      * self-loops are permitted
+
+	-- * Traversal
+	-- | Most traversal functions accept:
+	--
+	--    * @v -> [v]@: An /out-edge function/ listing the neighbors of a node.
+	--    * @v@: A /root node/ from which to begin the traversal.
+
+	-- ** Depth-first search (DFS)
 	dfsPreOrder,
 	dfsPostOrder,
 	dfsEdgesTraveled,
 	dfsEdgesSeen,
-	{- BREADTH-FIRST TRAVERSAL -}
+	-- ** Breadth-first search (BFS)
 	bfsOrder,
 	bfsEdgesTraveled,
 	bfsEdgesSeen,
@@ -56,36 +106,24 @@ eventGroups _ = []
 {---- DEPTH-FIRST SEARCH ----}
 
 -- | Lazily perform a rooted depth-first-search and obtain the visited nodes
--- | in a pre-ordering.
-dfsPreOrder :: (Eq v, Hashable v)
-            => (v -> [v]) -- ^ Out-edge function
-            -> v          -- ^ Root node of search
-            -> [v]
+--   in a pre-ordering.
+dfsPreOrder :: (Eq v, Hashable v) => (v -> [v]) -> v -> [v]
 dfsPreOrder adj root = dfsEvents adj root >>= eventPreOrders
 
 -- | Lazily perform a rooted depth-first-search and obtain the visited nodes
--- | in a post-ordering.
-dfsPostOrder :: (Eq v, Hashable v)
-             => (v -> [v]) -- ^ Out-edge function
-             -> v          -- ^ Root node of search
-             -> [v]
+--   in a post-ordering.
+dfsPostOrder :: (Eq v, Hashable v) => (v -> [v]) -> v -> [v]
 dfsPostOrder adj root = dfsEvents adj root >>= eventPostOrders
 
 -- NOTE: an edge post-ordering might also be useful.
 -- | Lazily perform a rooted depth-first-search and obtain the (directed)
--- | spanning tree edges in a pre-ordering.
-dfsEdgesTraveled :: (Eq v, Hashable v)
-                 => (v -> [v]) -- ^ Out-edge function
-                 -> v          -- ^ Root node of search
-                 -> [(v,v)]
+--   spanning tree edges in a pre-ordering.
+dfsEdgesTraveled :: (Eq v, Hashable v) => (v -> [v]) -> v -> [(v,v)]
 dfsEdgesTraveled adj root = dfsEvents adj root >>= eventEdgesTraveled
 
 -- | Lazily perform a rooted depth-first-search and obtain the (directed) edges
--- | seen (regardless of whether they were traveled), in order of inspection.
-dfsEdgesSeen :: (Eq v, Hashable v)
-             => (v -> [v]) -- ^ Out-edge function
-             -> v          -- ^ Root node of search
-             -> [(v,v)]
+--   seen (regardless of whether they were traveled), in order of inspection.
+dfsEdgesSeen :: (Eq v, Hashable v) => (v -> [v]) -> v -> [(v,v)]
 dfsEdgesSeen adj root = dfsEvents adj root >>= eventEdgesSeen
 
 dfsEvents :: (Eq v,Hashable v)=> (v -> [v]) -> v -> [TraversalEvent v]
@@ -110,11 +148,8 @@ dfsEvents adj root = peek root [] HashSet.empty True where
 {---- BREADTH-FIRST SEARCH ----}
 
 -- | Lazily perform a rooted breadth-first-search and obtain the nodes
--- | visited, in order.
-bfsOrder :: (Eq v, Hashable v)
-     => (v -> [v]) -- ^ Out-edge function
-     -> v          -- ^ Root node of search
-     -> [v]
+--   visited, in order.
+bfsOrder :: (Eq v, Hashable v) => (v -> [v]) -> v -> [v]
 bfsOrder adj root = bfsNodeEvents adj [root] >>= eventPreOrders
 
 -- FIXME:
@@ -125,12 +160,12 @@ bfsOrder adj root = bfsNodeEvents adj [root] >>= eventPreOrders
 --     (typical test code differs vastly from typical "real" code)
 
 -- | Yields groups of increasing distance from a set of nodes.
--- | The first set yielded are the input nodes, the second set are
--- | the nodes whose minimum distance from an input node is exactly 1,
--- | and so on.
--- | Continues to yield empty sets when there are no more nodes.
--- |
--- | The nodes in the graph must be of finite degree.
+--   The first set yielded are the input nodes, the second set are
+--   the nodes whose minimum distance from an input node is exactly 1,
+--   and so on.
+--   Continues to yield empty sets when there are no more nodes.
+--
+--   The nodes in the graph must be of finite degree.
 groupsByDistance :: (Eq v, Hashable v)
      => (v -> [v]) -- ^ Out-edge function
      -> [v]        -- ^ Initial set of nodes
@@ -139,19 +174,19 @@ groupsByDistance adj roots =
 	(bfsNodeEvents adj roots >>= eventGroups) ++ cycle [HashSet.empty]
 
 -- | Lazily perform a rooted breadth-first-search and obtain the (directed)
--- | spanning tree edges.
-bfsEdgesTraveled :: (Eq v, Hashable v)
-     => (v -> [v]) -- ^ Out-edge function
-     -> v          -- ^ Root node of search
-     -> [(v,v)]
+--   spanning tree edges.
+--
+--   There is a known bug that this doesn't handle multiple edges properly.
+--   (it is debatable whether the bug ought to be fixed, or if multiple
+--    edges ought to be forbidden in the first place)
+bfsEdgesTraveled :: (Eq v, Hashable v) => (v -> [v]) -> v -> [(v,v)]
 bfsEdgesTraveled adj root = bfsEdgeEvents adj [root] >>= eventEdgesTraveled
 
 -- | Lazily perform a rooted breadth-first-search and obtain the (directed)
--- | edges seen (regardless of whether they were traveled).
-bfsEdgesSeen :: (Eq v, Hashable v)
-     => (v -> [v]) -- ^ Out-edge function
-     -> v          -- ^ Root node of search
-     -> [(v,v)]
+--   edges seen (regardless of whether they were traveled).
+--
+--   There is a known bug that this doesn't handle multiple edges properly.
+bfsEdgesSeen :: (Eq v, Hashable v) => (v -> [v]) -> v -> [(v,v)]
 bfsEdgesSeen adj root = bfsEdgeEvents adj [root] >>= eventEdgesSeen
 
 -- These two BFS implementations operate at different levels of granularity
