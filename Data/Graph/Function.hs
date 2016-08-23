@@ -1,10 +1,5 @@
 -- | Graph algorithms without a graph data structure.
 module Data.Graph.Function(
-	{- TYPEDEFS AND ADAPTERS -}
-	AdjacencyU,
-	AdjacencyW,
-	adjacencyToW,
-	adjacencyToU,
 	{- DEPTH-FIRST TRAVERSAL -}
 	dfsPreOrder,
 	dfsPostOrder,
@@ -23,21 +18,6 @@ import Data.HashSet(HashSet)
 import qualified Data.HashSet as HashSet
 import Data.Dequeue(BankersDequeue)
 import qualified Data.Dequeue as Dequeue
-
-{---- TYPEDEFS AND ADAPTERS ----}
-
--- | Type of an unweighted adjacency function.
-type AdjacencyU   v = v -> [v];
--- | Type of a weighted adjacency function.
-type AdjacencyW w v = v -> [(v,w)];
-
--- | Augment an unweighted adjacency function with weights of 1.
-adjacencyToW :: (Num w)=> AdjacencyU v -> AdjacencyW w v
-adjacencyToW = (map (flip (,) 1) .)
-
--- | Project a weighted adjacency function to just the weights.
-adjacencyToU :: AdjacencyW w v -> AdjacencyU v
-adjacencyToU = (map fst .)
 
 {---- DFS/BFS IMPLEMENTATION DETAIL ----}
 
@@ -77,26 +57,38 @@ eventGroups _ = []
 
 -- | Lazily perform a rooted depth-first-search and obtain the visited nodes
 -- | in a pre-ordering.
-dfsPreOrder :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [v]
+dfsPreOrder :: (Eq v, Hashable v)
+            => (v -> [v]) -- ^ Out-edge function
+            -> v          -- ^ Root node of search
+            -> [v]
 dfsPreOrder adj root = dfsEvents adj root >>= eventPreOrders
 
 -- | Lazily perform a rooted depth-first-search and obtain the visited nodes
 -- | in a post-ordering.
-dfsPostOrder :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [v]
+dfsPostOrder :: (Eq v, Hashable v)
+             => (v -> [v]) -- ^ Out-edge function
+             -> v          -- ^ Root node of search
+             -> [v]
 dfsPostOrder adj root = dfsEvents adj root >>= eventPostOrders
 
 -- NOTE: an edge post-ordering might also be useful.
 -- | Lazily perform a rooted depth-first-search and obtain the (directed)
 -- | spanning tree edges in a pre-ordering.
-dfsEdgesTraveled :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [(v,v)]
+dfsEdgesTraveled :: (Eq v, Hashable v)
+                 => (v -> [v]) -- ^ Out-edge function
+                 -> v          -- ^ Root node of search
+                 -> [(v,v)]
 dfsEdgesTraveled adj root = dfsEvents adj root >>= eventEdgesTraveled
 
 -- | Lazily perform a rooted depth-first-search and obtain the (directed) edges
 -- | seen (regardless of whether they were traveled), in order of inspection.
-dfsEdgesSeen :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [(v,v)]
+dfsEdgesSeen :: (Eq v, Hashable v)
+             => (v -> [v]) -- ^ Out-edge function
+             -> v          -- ^ Root node of search
+             -> [(v,v)]
 dfsEdgesSeen adj root = dfsEvents adj root >>= eventEdgesSeen
 
-dfsEvents :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [TraversalEvent v]
+dfsEvents :: (Eq v,Hashable v)=> (v -> [v]) -> v -> [TraversalEvent v]
 dfsEvents adj root = peek root [] HashSet.empty True where
 	-- NOTE: the stack is a LIFO stack of (node, neighborIter) pairs tracking
 	--       the unfinished work remaining for each node in the current path.
@@ -119,7 +111,10 @@ dfsEvents adj root = peek root [] HashSet.empty True where
 
 -- | Lazily perform a rooted breadth-first-search and obtain the nodes
 -- | visited, in order.
-bfsOrder :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [v]
+bfsOrder :: (Eq v, Hashable v)
+     => (v -> [v]) -- ^ Out-edge function
+     -> v          -- ^ Root node of search
+     -> [v]
 bfsOrder adj root = bfsNodeEvents adj [root] >>= eventPreOrders
 
 -- FIXME:
@@ -136,23 +131,32 @@ bfsOrder adj root = bfsNodeEvents adj [root] >>= eventPreOrders
 -- | Continues to yield empty sets when there are no more nodes.
 -- |
 -- | The nodes in the graph must be of finite degree.
-groupsByDistance :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [HashSet v]
+groupsByDistance :: (Eq v, Hashable v)
+     => (v -> [v]) -- ^ Out-edge function
+     -> [v]        -- ^ Initial set of nodes
+     -> [HashSet v]
 groupsByDistance adj roots =
 	(bfsNodeEvents adj roots >>= eventGroups) ++ cycle [HashSet.empty]
 
 -- | Lazily perform a rooted breadth-first-search and obtain the (directed)
 -- | spanning tree edges.
-bfsEdgesTraveled :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [(v,v)]
+bfsEdgesTraveled :: (Eq v, Hashable v)
+     => (v -> [v]) -- ^ Out-edge function
+     -> v          -- ^ Root node of search
+     -> [(v,v)]
 bfsEdgesTraveled adj root = bfsEdgeEvents adj [root] >>= eventEdgesTraveled
 
 -- | Lazily perform a rooted breadth-first-search and obtain the (directed)
 -- | edges seen (regardless of whether they were traveled).
-bfsEdgesSeen :: (Eq v,Hashable v)=> AdjacencyU v -> v -> [(v,v)]
+bfsEdgesSeen :: (Eq v, Hashable v)
+     => (v -> [v]) -- ^ Out-edge function
+     -> v          -- ^ Root node of search
+     -> [(v,v)]
 bfsEdgesSeen adj root = bfsEdgeEvents adj [root] >>= eventEdgesSeen
 
 -- These two BFS implementations operate at different levels of granularity
 -- (equidistant groups versus individual nodes).
-bfsNodeEvents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [TraversalEvent v]
+bfsNodeEvents :: (Eq v,Hashable v)=> (v -> [v]) -> [v] -> [TraversalEvent v]
 bfsNodeEvents adj roots = start where
 	start = rec (HashSet.fromList roots) (HashSet.fromList roots)
 	rec group seen
@@ -168,7 +172,7 @@ bfsNodeEvents adj roots = start where
 --        written assumes edges from a node are unique.
 --        I wasn't sure how to cleanly account for multiple edges without adding
 --        a lot of complexity to the code, so I knowingly left this bug in.
-bfsEdgeEvents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [TraversalEvent v]
+bfsEdgeEvents :: (Eq v,Hashable v)=> (v -> [v]) -> [v] -> [TraversalEvent v]
 bfsEdgeEvents adj roots = start where
 	start = iter (makeDequeue $ hashNub roots) (HashSet.fromList roots)
 	iter queueIn seen = case Dequeue.popFront queueIn of
@@ -211,7 +215,10 @@ makeDequeue = Dequeue.fromList
 -- | It is a logical error to call this with a directed graph.
 -- |
 -- | @roots@ may be infinite.
-undirectedComponents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [HashSet v]
+undirectedComponents :: (Eq v, Hashable v)
+                     => (v -> [v]) -- ^ Neighbor function (undirected graph)
+                     -> [v]        -- ^ Root nodes to search from
+                     -> [HashSet v]
 undirectedComponents adj roots = undefined -- FIXME
 
 -- | For a directed graph, read out the strongly connected components
@@ -223,7 +230,11 @@ undirectedComponents adj roots = undefined -- FIXME
 -- | be visited).
 -- |
 -- | @roots@ may be infinite.
-scComponents :: (Eq v,Hashable v)=> AdjacencyU v -> AdjacencyU v -> [v] -> [HashSet v]
+scComponents :: (Eq v, Hashable v)
+             => (v -> [v]) -- ^ Out-edge function
+             -> (v -> [v]) -- ^ In-edge function
+             -> [v]        -- ^ Root nodes to search from
+             -> [HashSet v]
 scComponents outEdges inEdges roots = undefined -- FIXME
 
 -- | For an undirected graph, read out all biconnected components
@@ -237,7 +248,10 @@ scComponents outEdges inEdges roots = undefined -- FIXME
 -- | It is a logical error to call this with a directed graph.
 -- |
 -- | @roots@ may be infinite.
-biconnectedComponents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [HashSet v]
+biconnectedComponents :: (Eq v, Hashable v)
+                      => (v -> [v]) -- ^ Neighbor function (undirected graph)
+                      -> [v]        -- ^ Root nodes to search from
+                      -> [HashSet v]
 biconnectedComponents adj roots = undefined -- FIXME
 
 {-
@@ -257,5 +271,3 @@ memoFixDagU :: (Eq v,Hashable v)
 memoFixDagU adj openRecProp = undefined -- FIXME use postorder to organize computations
 -}
 
--- FIXME need tests
--- * Make sure BFS related tests include edges between nodes of equal breadth
