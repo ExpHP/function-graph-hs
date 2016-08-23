@@ -77,17 +77,18 @@ testForwardEdge = "forward edge (sinkLadder)" ~::~
 
 	, "bfsEdgesSeen" ~: do
 		let actual = bfsEdgesSeen g root
-		take 2 actual `assertEqMultiset` edgeGroups !! 0
-		drop 2 actual `assertEqMultiset` (edgeGroups !! 1) ++ backEdges
+		(take 2.drop 0) actual `assertEqMultiset` [((1,False),(0,False)),((1,False),(1,True))]
+		(take 3.drop 2) actual `assertEqMultiset` [((1,True),(0,True)),((1,True),(1,False)),((0,False),(0,True))]
+		(       drop 5) actual `assertEqMultiset` [((0,True),(0,False))]
 
 	, "groupsByDistance" ~:
-		groupsByDistance g [root] @?= map HashSet.fromList nodeGroups
+		takeWhile (not.null) (groupsByDistance g [root])
+		@?= map HashSet.fromList nodeGroups
 	]
 	where
 		g = sinkLadder
 		nodeGroups = [[(1,False)], [(0,False),(1,True)], [(0,True)]]
 		edgeGroups = [map ((,) root) mids, map (flip (,) final) mids]
-		backEdges  = map (\(a,b) -> (b,a)) (edgeGroups !! 0)
 		[[root], mids, [final]] = nodeGroups
 
 -- This has a cross edge between two nodes in the same distance group.

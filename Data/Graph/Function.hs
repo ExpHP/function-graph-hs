@@ -164,9 +164,9 @@ bfsNodeEvents adj roots = start where
 bfsEdgeEvents :: (Eq v,Hashable v)=> AdjacencyU v -> [v] -> [TraversalEvent v]
 bfsEdgeEvents adj roots = start where
 	start = iter (makeDequeue $ hashNub roots) (HashSet.fromList roots)
-	iter queue seen = case Dequeue.popFront queue of
+	iter queueIn seen = case Dequeue.popFront queueIn of
 		Nothing         -> []
-		Just (s,queue') -> events ++ iter queue' seen' where
+		Just (s,queue) -> events ++ iter queue' seen' where
 			edges = [(s,t,not $ HashSet.member t seen) | t <- adj s]
 			newTs = [t | (_,t,isNew) <- edges, isNew]
 
