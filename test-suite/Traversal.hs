@@ -1,4 +1,4 @@
-module Bfs(testSuite) where
+module Traversal(testSuite) where
 import ExampleGraphs
 import TestUtils
 
