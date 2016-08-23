@@ -14,6 +14,7 @@ module TestUtils(
 	assertBool,
 	assertString,
 	assertEqual,
+	(@?),
 	(@=?),
 	(@?=),
 	) where
