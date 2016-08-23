@@ -22,10 +22,19 @@ add more to it and continue to use it in other work.
 
 ### Installation
 
-    git clone yadda yadda
-    cabal sandbox add-source yadda yadda
+    git clone https://github.com/ExpHP/function-graph-hs
+    # ...elsewhere...
+    cabal sandbox add-source /wherever/you/put/function-graph-hs
 
 Nothing on hackage yet; both because the thought of maintaining a project seems to spark in me some incomprehensible, *primal* sort of fear, and also because I'm not entirely wed to the name yet. `:V`
+
+### Documentation
+
+aahh, uh, uhm
+
+    git clone https://github.com/ExpHP/function-graph-hs && cd function-graph-hs
+    cabal haddock
+    (your-favorite-browser) dist/doc/html/function-graph/index.html
 
 ### Examples
 You can find a terribly contrived example of possible usage
